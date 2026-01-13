@@ -619,6 +619,7 @@ declare namespace PluginApi {
     const Mousetrap: typeof import("mousetrap");
     const ReactFontAwesome: typeof import("@fortawesome/react-fontawesome");
     const ReactSelect: typeof import("react-select");
+    const ReactSlick: typeof import("@ant-design/react-slick");
 
     // @ts-expect-error
     import { MousetrapStatic } from "mousetrap";
@@ -677,12 +678,14 @@ declare namespace PluginApi {
     GalleryIDSelect: React.FC<any>;
     GalleryImagesPanel: React.FC<any>;
     GalleryList: React.FC<any>;
+    GalleryRecommendationRow: React.FC<any>;
     GallerySelect: React.FC<any>;
     GridCard: React.FC<any>;
     GroupCard: React.FC<any>;
     GroupCardGrid: React.FC<any>;
     GroupIDSelect: React.FC<any>;
     GroupList: React.FC<any>;
+    GroupRecommendationRow: React.FC<any>;
     GroupSelect: React.FC<any>;
     GroupSubGroupsPanel: React.FC<any>;
     HeaderImage: React.FC<any>;
@@ -692,6 +695,7 @@ declare namespace PluginApi {
     ImageCardGrid: React.FC<any>;
     ImageInput: React.FC<any>;
     ImageList: React.FC<any>;
+    ImageRecommendationRow: React.FC<any>;
     LightboxLink: React.FC<any>;
     LoadingIndicator: React.FC<any>;
     "MainNavBar.MenuItems": React.FC<any>;
@@ -715,12 +719,14 @@ declare namespace PluginApi {
     PerformerImagesPanel: React.FC<any>;
     PerformerList: React.FC<any>;
     PerformerPage: React.FC<any>;
+    PerformerRecommendationRow: React.FC<any>;
     PerformerScenesPanel: React.FC<any>;
     PerformerSelect: React.FC<any>;
     PluginSettings: React.FC<any>;
     RatingNumber: React.FC<any>;
     RatingStars: React.FC<any>;
     RatingSystem: React.FC<any>;
+    RecommendationRow: React.FC<any>;
     SceneFileInfoPanel: React.FC<any>;
     SceneIDSelect: React.FC<any>;
     ScenePage: React.FC<any>;
@@ -741,6 +747,8 @@ declare namespace PluginApi {
     "SceneMarkerCard.Popovers": React.FC<any>;
     SceneMarkerCardGrid: React.FC<any>;
     SceneMarkerList: React.FC<any>;
+    SceneMarkerRecommendationRow: React.FC<any>;
+    SceneRecommendationRow: React.FC<any>;
     SelectSetting: React.FC<any>;
     Setting: React.FC<any>;
     SettingGroup: React.FC<any>;
@@ -752,6 +760,7 @@ declare namespace PluginApi {
     StudioDetailsPanel: React.FC<any>;
     StudioIDSelect: React.FC<any>;
     StudioList: React.FC<any>;
+    StudioRecommendationRow: React.FC<any>;
     StudioSelect: React.FC<any>;
     SweatDrops: React.FC<any>;
     TabTitleCounter: React.FC<any>;
@@ -764,6 +773,7 @@ declare namespace PluginApi {
     TagCardGrid: React.FC<any>;
     TagLink: React.FC<any>;
     TagList: React.FC<any>;
+    TagRecommendationRow: React.FC<any>;
     TagSelect: React.FC<any>;
     TruncatedText: React.FC<any>;
   };
