@@ -302,6 +302,10 @@ export const SceneEditPanel: React.FC<IProps> = ({
     ImageUtils.onImageChange(event, onImageLoad);
   }
 
+  function onResetCover() {
+    formik.setFieldValue("cover_image", null);
+  }
+
   async function onScrapeClicked(s: GQL.ScraperSourceInput) {
     setIsLoading(true);
     try {
@@ -856,6 +860,7 @@ export const SceneEditPanel: React.FC<IProps> = ({
                 isEditing
                 onImageChange={onCoverImageChange}
                 onImageURL={onImageLoad}
+                onReset={scene.id ? onResetCover : undefined}
               />
             </Form.Group>
           </Col>
