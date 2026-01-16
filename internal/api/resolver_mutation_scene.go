@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/stashapp/stash/internal/manager"
@@ -62,9 +63,9 @@ func (r *mutationResolver) SceneCreate(ctx context.Context, input models.SceneCr
 	}
 
 	if input.Urls != nil {
-		newScene.URLs = models.NewRelatedStrings(input.Urls)
+		newScene.URLs = models.NewRelatedStrings(stringslice.TrimSpace(input.Urls))
 	} else if input.URL != nil {
-		newScene.URLs = models.NewRelatedStrings([]string{*input.URL})
+		newScene.URLs = models.NewRelatedStrings([]string{strings.TrimSpace(*input.URL)})
 	}
 
 	newScene.PerformerIDs, err = translator.relatedIds(input.PerformerIds)
@@ -296,6 +297,7 @@ func (r *mutationResolver) sceneUpdate(ctx context.Context, input models.SceneUp
 	}
 
 	var coverImageData []byte
+	coverImageIncluded := translator.hasField("cover_image")
 	if input.CoverImage != nil {
 		var err error
 		coverImageData, err = utils.ProcessImageInput(ctx, *input.CoverImage)
@@ -309,21 +311,21 @@ func (r *mutationResolver) sceneUpdate(ctx context.Context, input models.SceneUp
 		return nil, err
 	}
 
-	if err := r.sceneUpdateCoverImage(ctx, scene, coverImageData); err != nil {
-		return nil, err
+	if coverImageIncluded {
+		if err := r.sceneUpdateCoverImage(ctx, scene, coverImageData); err != nil {
+			return nil, err
+		}
 	}
 
 	return scene, nil
 }
 
 func (r *mutationResolver) sceneUpdateCoverImage(ctx context.Context, s *models.Scene, coverImageData []byte) error {
-	if len(coverImageData) > 0 {
-		qb := r.repository.Scene
+	qb := r.repository.Scene
 
-		// update cover table
-		if err := qb.UpdateCover(ctx, s.ID, coverImageData); err != nil {
-			return err
-		}
+	// update cover table - empty data will clear the cover
+	if err := qb.UpdateCover(ctx, s.ID, coverImageData); err != nil {
+		return err
 	}
 
 	return nil
@@ -428,10 +430,11 @@ func (r *mutationResolver) SceneDestroy(ctx context.Context, input models.SceneD
 	}
 
 	fileNamingAlgo := manager.GetInstance().Config.GetVideoFileNamingAlgorithm()
+	trashPath := manager.GetInstance().Config.GetDeleteTrashPath()
 
 	var s *models.Scene
 	fileDeleter := &scene.FileDeleter{
-		Deleter:        file.NewDeleter(),
+		Deleter:        file.NewDeleterWithTrash(trashPath),
 		FileNamingAlgo: fileNamingAlgo,
 		Paths:          manager.GetInstance().Paths,
 	}
@@ -482,9 +485,10 @@ func (r *mutationResolver) ScenesDestroy(ctx context.Context, input models.Scene
 
 	var scenes []*models.Scene
 	fileNamingAlgo := manager.GetInstance().Config.GetVideoFileNamingAlgorithm()
+	trashPath := manager.GetInstance().Config.GetDeleteTrashPath()
 
 	fileDeleter := &scene.FileDeleter{
-		Deleter:        file.NewDeleter(),
+		Deleter:        file.NewDeleterWithTrash(trashPath),
 		FileNamingAlgo: fileNamingAlgo,
 		Paths:          manager.GetInstance().Paths,
 	}
@@ -593,8 +597,9 @@ func (r *mutationResolver) SceneMerge(ctx context.Context, input SceneMergeInput
 	}
 
 	mgr := manager.GetInstance()
+	trashPath := mgr.Config.GetDeleteTrashPath()
 	fileDeleter := &scene.FileDeleter{
-		Deleter:        file.NewDeleter(),
+		Deleter:        file.NewDeleterWithTrash(trashPath),
 		FileNamingAlgo: mgr.Config.GetVideoFileNamingAlgorithm(),
 		Paths:          mgr.Paths,
 	}
@@ -650,7 +655,7 @@ func (r *mutationResolver) SceneMarkerCreate(ctx context.Context, input SceneMar
 	// Populate a new scene marker from the input
 	newMarker := models.NewSceneMarker()
 
-	newMarker.Title = input.Title
+	newMarker.Title = strings.TrimSpace(input.Title)
 	newMarker.Seconds = input.Seconds
 	newMarker.PrimaryTagID = primaryTagID
 	newMarker.SceneID = sceneID
@@ -736,9 +741,10 @@ func (r *mutationResolver) SceneMarkerUpdate(ctx context.Context, input SceneMar
 	}
 
 	mgr := manager.GetInstance()
+	trashPath := mgr.Config.GetDeleteTrashPath()
 
 	fileDeleter := &scene.FileDeleter{
-		Deleter:        file.NewDeleter(),
+		Deleter:        file.NewDeleterWithTrash(trashPath),
 		FileNamingAlgo: mgr.Config.GetVideoFileNamingAlgorithm(),
 		Paths:          mgr.Paths,
 	}
@@ -949,9 +955,10 @@ func (r *mutationResolver) SceneMarkersDestroy(ctx context.Context, markerIDs []
 
 	var markers []*models.SceneMarker
 	fileNamingAlgo := manager.GetInstance().Config.GetVideoFileNamingAlgorithm()
+	trashPath := manager.GetInstance().Config.GetDeleteTrashPath()
 
 	fileDeleter := &scene.FileDeleter{
-		Deleter:        file.NewDeleter(),
+		Deleter:        file.NewDeleterWithTrash(trashPath),
 		FileNamingAlgo: fileNamingAlgo,
 		Paths:          manager.GetInstance().Paths,
 	}

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Tabs, Tab, Col, Row } from "react-bootstrap";
-import { useIntl } from "react-intl";
+import { Button, Tabs, Tab, Col, Row } from "react-bootstrap";
+import { FormattedMessage, useIntl } from "react-intl";
 import { useHistory, Redirect, RouteComponentProps } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import cx from "classnames";
@@ -16,7 +16,7 @@ import { DetailsEditNavbar } from "src/components/Shared/DetailsEditNavbar";
 import { ErrorMessage } from "src/components/Shared/ErrorMessage";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { useToast } from "src/hooks/Toast";
-import { ConfigurationContext } from "src/hooks/Config";
+import { useConfigurationContext } from "src/hooks/Config";
 import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
 import {
   CompressedPerformerDetailsPanel,
@@ -28,6 +28,7 @@ import { PerformerGroupsPanel } from "./PerformerGroupsPanel";
 import { PerformerImagesPanel } from "./PerformerImagesPanel";
 import { PerformerAppearsWithPanel } from "./performerAppearsWithPanel";
 import { PerformerEditPanel } from "./PerformerEditPanel";
+import { PerformerMergeModal } from "../PerformerMergeDialog";
 import { PerformerSubmitButton } from "./PerformerSubmitButton";
 import { useRatingKeybinds } from "src/hooks/keybinds";
 import { DetailImage } from "src/components/Shared/DetailImage";
@@ -42,13 +43,13 @@ import {
 import { DetailTitle } from "src/components/Shared/DetailsPage/DetailTitle";
 import { ExpandCollapseButton } from "src/components/Shared/CollapseButton";
 import { FavoriteIcon } from "src/components/Shared/FavoriteIcon";
-import { SweatDrops } from "src/components/Shared/SweatDrops";
 import { AliasList } from "src/components/Shared/DetailsPage/AliasList";
 import { HeaderImage } from "src/components/Shared/DetailsPage/HeaderImage";
 import { LightboxLink } from "src/hooks/Lightbox/LightboxLink";
 import { PatchComponent } from "src/patch";
 import { ILightboxImage } from "src/hooks/Lightbox/types";
 import { goBackOrReplace } from "src/utils/history";
+import { OCounterButton } from "src/components/Shared/CountButton";
 
 interface IProps {
   performer: GQL.PerformerDataFragment;
@@ -240,7 +241,7 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
     const intl = useIntl();
 
     // Configuration settings
-    const { configuration } = React.useContext(ConfigurationContext);
+    const { configuration } = useConfigurationContext();
     const uiConfig = configuration?.ui;
     const abbreviateCounter = uiConfig?.abbreviateCounters ?? false;
     const enableBackgroundImage =
@@ -250,6 +251,7 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
 
     const [collapsed, setCollapsed] = useState<boolean>(!showAllDetails);
     const [isEditing, setIsEditing] = useState<boolean>(false);
+    const [isMerging, setIsMerging] = useState<boolean>(false);
     const [image, setImage] = useState<string | null>();
     const [encodingImage, setEncodingImage] = useState<boolean>(false);
     const loadStickyHeader = useLoadStickyHeader();
@@ -283,6 +285,33 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
       } catch (e) {
         Toast.error(e);
       }
+    }
+
+    function renderMergeButton() {
+      return (
+        <Button variant="secondary" onClick={() => setIsMerging(true)}>
+          <FormattedMessage id="actions.merge" />
+          ...
+        </Button>
+      );
+    }
+
+    function renderMergeDialog() {
+      if (!performer.id) return;
+      return (
+        <PerformerMergeModal
+          show={isMerging}
+          onClose={(mergedId) => {
+            setIsMerging(false);
+            if (mergedId !== undefined && mergedId !== performer.id) {
+              // By default, the merge destination is the current performer, but
+              // the user can change it, in which case we need to redirect.
+              history.replace(`/performers/${mergedId}`);
+            }
+          }}
+          performers={[performer]}
+        />
+      );
     }
 
     useRatingKeybinds(
@@ -432,12 +461,7 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
                     withoutContext
                   />
                   {!!performer.o_counter && (
-                    <span className="o-counter">
-                      <span className="fa-icon">
-                        <SweatDrops />
-                      </span>
-                      <span>{performer.o_counter}</span>
-                    </span>
+                    <OCounterButton value={performer.o_counter} />
                   )}
                 </div>
                 {!isEditing && (
@@ -474,9 +498,12 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
                         onImageChange={() => {}}
                         classNames="mb-2"
                         customButtons={
-                          <div>
-                            <PerformerSubmitButton performer={performer} />
-                          </div>
+                          <>
+                            {renderMergeButton()}
+                            <div>
+                              <PerformerSubmitButton performer={performer} />
+                            </div>
+                          </>
                         }
                       ></DetailsEditNavbar>
                     </Row>
@@ -504,6 +531,7 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
             </div>
           </div>
         </div>
+        {renderMergeDialog()}
       </div>
     );
   }

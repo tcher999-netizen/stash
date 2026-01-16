@@ -30,9 +30,9 @@ func (ScrapedStudio) IsScrapedContent() {}
 func (s *ScrapedStudio) ToStudio(endpoint string, excluded map[string]bool) *Studio {
 	// Populate a new studio from the input
 	ret := NewStudio()
-	ret.Name = s.Name
+	ret.Name = strings.TrimSpace(s.Name)
 
-	if s.RemoteSiteID != nil && endpoint != "" {
+	if s.RemoteSiteID != nil && endpoint != "" && *s.RemoteSiteID != "" {
 		ret.StashIDs = NewRelatedStashIDs([]StashID{
 			{
 				Endpoint:  endpoint,
@@ -62,7 +62,7 @@ func (s *ScrapedStudio) ToStudio(endpoint string, excluded map[string]bool) *Stu
 		ret.Details = *s.Details
 	}
 
-	if s.Aliases != nil && !excluded["aliases"] {
+	if s.Aliases != nil && *s.Aliases != "" && !excluded["aliases"] {
 		ret.Aliases = NewRelatedStrings(stringslice.FromString(*s.Aliases, ","))
 	}
 
@@ -95,37 +95,38 @@ func (s *ScrapedStudio) ToPartial(id string, endpoint string, excluded map[strin
 	currentTime := time.Now()
 
 	if s.Name != "" && !excluded["name"] {
-		ret.Name = NewOptionalString(s.Name)
+		ret.Name = NewOptionalString(strings.TrimSpace(s.Name))
 	}
 
 	if len(s.URLs) > 0 {
 		if !excluded["urls"] {
+
 			ret.URLs = &UpdateStrings{
-				Values: s.URLs,
+				Values: stringslice.TrimSpace(s.URLs),
 				Mode:   RelationshipUpdateModeSet,
 			}
 		}
 	} else {
 		urls := []string{}
 		if s.URL != nil && !excluded["url"] {
-			urls = append(urls, *s.URL)
+			urls = append(urls, strings.TrimSpace(*s.URL))
 		}
 
 		if len(urls) > 0 {
 			ret.URLs = &UpdateStrings{
-				Values: urls,
+				Values: stringslice.TrimSpace(urls),
 				Mode:   RelationshipUpdateModeSet,
 			}
 		}
 	}
 
 	if s.Details != nil && !excluded["details"] {
-		ret.Details = NewOptionalString(*s.Details)
+		ret.Details = NewOptionalString(strings.TrimSpace(*s.Details))
 	}
 
-	if s.Aliases != nil && !excluded["aliases"] {
+	if s.Aliases != nil && *s.Aliases != "" && !excluded["aliases"] {
 		ret.Aliases = &UpdateStrings{
-			Values: stringslice.FromString(*s.Aliases, ","),
+			Values: stringslice.TrimSpace(stringslice.FromString(*s.Aliases, ",")),
 			Mode:   RelationshipUpdateModeSet,
 		}
 	}
@@ -140,7 +141,7 @@ func (s *ScrapedStudio) ToPartial(id string, endpoint string, excluded map[strin
 		}
 	}
 
-	if s.RemoteSiteID != nil && endpoint != "" {
+	if s.RemoteSiteID != nil && endpoint != "" && *s.RemoteSiteID != "" {
 		ret.StashIDs = &UpdateStashIDs{
 			StashIDs: existingStashIDs,
 			Mode:     RelationshipUpdateModeSet,
@@ -197,10 +198,14 @@ func (ScrapedPerformer) IsScrapedContent() {}
 func (p *ScrapedPerformer) ToPerformer(endpoint string, excluded map[string]bool) *Performer {
 	ret := NewPerformer()
 	currentTime := time.Now()
-	ret.Name = *p.Name
+	ret.Name = strings.TrimSpace(*p.Name)
 
 	if p.Aliases != nil && !excluded["aliases"] {
-		ret.Aliases = NewRelatedStrings(stringslice.FromString(*p.Aliases, ","))
+		aliases := stringslice.FromString(*p.Aliases, ",")
+		for i, alias := range aliases {
+			aliases[i] = strings.TrimSpace(alias)
+		}
+		ret.Aliases = NewRelatedStrings(aliases)
 	}
 	if p.Birthdate != nil && !excluded["birthdate"] {
 		date, err := ParseDate(*p.Birthdate)
@@ -301,7 +306,7 @@ func (p *ScrapedPerformer) ToPerformer(endpoint string, excluded map[string]bool
 		}
 	}
 
-	if p.RemoteSiteID != nil && endpoint != "" {
+	if p.RemoteSiteID != nil && endpoint != "" && *p.RemoteSiteID != "" {
 		ret.StashIDs = NewRelatedStashIDs([]StashID{
 			{
 				Endpoint:  endpoint,
@@ -430,7 +435,7 @@ func (p *ScrapedPerformer) ToPartial(endpoint string, excluded map[string]bool, 
 		}
 	}
 
-	if p.RemoteSiteID != nil && endpoint != "" {
+	if p.RemoteSiteID != nil && endpoint != "" && *p.RemoteSiteID != "" {
 		ret.StashIDs = &UpdateStashIDs{
 			StashIDs: existingStashIDs,
 			Mode:     RelationshipUpdateModeSet,
@@ -459,7 +464,7 @@ func (t *ScrapedTag) ToTag(endpoint string, excluded map[string]bool) *Tag {
 	ret := NewTag()
 	ret.Name = t.Name
 
-	if t.RemoteSiteID != nil && endpoint != "" {
+	if t.RemoteSiteID != nil && endpoint != "" && *t.RemoteSiteID != "" {
 		ret.StashIDs = NewRelatedStashIDs([]StashID{
 			{
 				Endpoint:  endpoint,

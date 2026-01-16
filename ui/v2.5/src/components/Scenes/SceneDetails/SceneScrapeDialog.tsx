@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import * as GQL from "src/core/generated-graphql";
 import {
-  ScrapeDialog,
   ScrapedInputGroupRow,
   ScrapedTextAreaRow,
   ScrapedImageRow,
   ScrapedStringListRow,
-} from "src/components/Shared/ScrapeDialog/ScrapeDialog";
+} from "src/components/Shared/ScrapeDialog/ScrapeDialogRow";
+import { ScrapeDialog } from "src/components/Shared/ScrapeDialog/ScrapeDialog";
 import { useIntl } from "react-intl";
 import { uniq } from "lodash-es";
 import { Performer } from "src/components/Performers/PerformerSelect";
@@ -131,7 +131,7 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
     scraped.groups?.filter((t) => !t.stored_id) ?? []
   );
 
-  const { tags, newTags, scrapedTagsRow } = useScrapedTags(
+  const { tags, newTags, scrapedTagsRow, linkDialog } = useScrapedTags(
     sceneTags,
     scraped.tags,
     endpoint
@@ -218,32 +218,38 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
     return (
       <>
         <ScrapedInputGroupRow
+          field="title"
           title={intl.formatMessage({ id: "title" })}
           result={title}
           onChange={(value) => setTitle(value)}
         />
         <ScrapedInputGroupRow
+          field="code"
           title={intl.formatMessage({ id: "scene_code" })}
           result={code}
           onChange={(value) => setCode(value)}
         />
         <ScrapedStringListRow
+          field="urls"
           title={intl.formatMessage({ id: "urls" })}
           result={urls}
           onChange={(value) => setURLs(value)}
         />
         <ScrapedInputGroupRow
+          field="date"
           title={intl.formatMessage({ id: "date" })}
           placeholder="YYYY-MM-DD"
           result={date}
           onChange={(value) => setDate(value)}
         />
         <ScrapedInputGroupRow
+          field="director"
           title={intl.formatMessage({ id: "director" })}
           result={director}
           onChange={(value) => setDirector(value)}
         />
         <ScrapedStudioRow
+          field="studio"
           title={intl.formatMessage({ id: "studios" })}
           result={studio}
           onChange={(value) => setStudio(value)}
@@ -251,6 +257,7 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
           onCreateNew={createNewStudio}
         />
         <ScrapedPerformersRow
+          field="performers"
           title={intl.formatMessage({ id: "performers" })}
           result={performers}
           onChange={(value) => setPerformers(value)}
@@ -259,6 +266,7 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
           ageFromDate={date.useNewValue ? date.newValue : date.originalValue}
         />
         <ScrapedGroupsRow
+          field="groups"
           title={intl.formatMessage({ id: "groups" })}
           result={groups}
           onChange={(value) => setGroups(value)}
@@ -267,17 +275,20 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
         />
         {scrapedTagsRow}
         <ScrapedTextAreaRow
+          field="details"
           title={intl.formatMessage({ id: "details" })}
           result={details}
           onChange={(value) => setDetails(value)}
         />
         <ScrapedInputGroupRow
+          field="stash_ids"
           title={intl.formatMessage({ id: "stash_id" })}
           result={stashID}
           locked
           onChange={(value) => setStashID(value)}
         />
         <ScrapedImageRow
+          field="cover_image"
           title={intl.formatMessage({ id: "cover_image" })}
           className="scene-cover"
           result={image}
@@ -287,17 +298,22 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
     );
   }
 
+  if (linkDialog) {
+    return linkDialog;
+  }
+
   return (
     <ScrapeDialog
       title={intl.formatMessage(
         { id: "dialogs.scrape_entity_title" },
         { entity_type: intl.formatMessage({ id: "scene" }) }
       )}
-      renderScrapeRows={renderScrapeRows}
       onClose={(apply) => {
         onClose(apply ? makeNewScrapedItem() : undefined);
       }}
-    />
+    >
+      {renderScrapeRows()}
+    </ScrapeDialog>
   );
 };
 

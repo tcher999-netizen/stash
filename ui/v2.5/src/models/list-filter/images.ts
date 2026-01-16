@@ -25,12 +25,19 @@ import { GalleriesCriterionOption } from "./criteria/galleries";
 
 const defaultSortBy = "path";
 
-const sortByOptions = ["filesize", "file_count", "date", ...MediaSortByOptions]
+const sortByOptions = [
+  "filesize",
+  "file_count",
+  "date",
+  "resolution",
+  ...MediaSortByOptions,
+]
   .map(ListFilterOptions.createSortBy)
   .concat([
     {
       messageID: "o_count",
       value: "o_counter",
+      sfwMessageID: "o_count_sfw",
     },
   ]);
 const displayModeOptions = [DisplayMode.Grid, DisplayMode.Wall];
@@ -43,7 +50,9 @@ const criterionOptions = [
   PathCriterionOption,
   GalleriesCriterionOption,
   OrganizedCriterionOption,
-  createMandatoryNumberCriterionOption("o_counter", "o_count"),
+  createMandatoryNumberCriterionOption("o_counter", "o_count", {
+    sfwMessageID: "o_count_sfw",
+  }),
   ResolutionCriterionOption,
   OrientationCriterionOption,
   ImageIsMissingCriterionOption,

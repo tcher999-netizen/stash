@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/plugin/hook"
@@ -32,23 +33,23 @@ func (r *mutationResolver) StudioCreate(ctx context.Context, input models.Studio
 	// Populate a new studio from the input
 	newStudio := models.NewStudio()
 
-	newStudio.Name = input.Name
+	newStudio.Name = strings.TrimSpace(input.Name)
 	newStudio.Rating = input.Rating100
 	newStudio.Favorite = translator.bool(input.Favorite)
 	newStudio.Details = translator.string(input.Details)
 	newStudio.IgnoreAutoTag = translator.bool(input.IgnoreAutoTag)
-	newStudio.Aliases = models.NewRelatedStrings(input.Aliases)
+	newStudio.Aliases = models.NewRelatedStrings(stringslice.TrimSpace(input.Aliases))
 	newStudio.StashIDs = models.NewRelatedStashIDs(models.StashIDInputs(input.StashIds).ToStashIDs())
 
 	var err error
 
 	newStudio.URLs = models.NewRelatedStrings([]string{})
 	if input.URL != nil {
-		newStudio.URLs.Add(*input.URL)
+		newStudio.URLs.Add(strings.TrimSpace(*input.URL))
 	}
 
 	if input.Urls != nil {
-		newStudio.URLs.Add(input.Urls...)
+		newStudio.URLs.Add(stringslice.TrimSpace(input.Urls)...)
 	}
 
 	newStudio.ParentID, err = translator.intPtrFromString(input.ParentID)
@@ -133,7 +134,7 @@ func (r *mutationResolver) StudioUpdate(ctx context.Context, input models.Studio
 
 	if translator.hasField("urls") {
 		// ensure url not included in the input
-		if err := r.validateNoLegacyURLs(translator); err != nil {
+		if err := validateNoLegacyURLs(translator); err != nil {
 			return nil, err
 		}
 
@@ -210,7 +211,7 @@ func (r *mutationResolver) BulkStudioUpdate(ctx context.Context, input BulkStudi
 
 	if translator.hasField("urls") {
 		// ensure url/twitter/instagram are not included in the input
-		if err := r.validateNoLegacyURLs(translator); err != nil {
+		if err := validateNoLegacyURLs(translator); err != nil {
 			return nil, err
 		}
 

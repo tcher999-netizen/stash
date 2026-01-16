@@ -3,12 +3,11 @@ import React, {
   useEffect,
   useState,
   useMemo,
-  useContext,
   useRef,
   useLayoutEffect,
 } from "react";
-import { FormattedDate, FormattedMessage, useIntl } from "react-intl";
-import { Link, RouteComponentProps } from "react-router-dom";
+import { FormattedMessage, useIntl } from "react-intl";
+import { useHistory, Link, RouteComponentProps } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import * as GQL from "src/core/generated-graphql";
 import {
@@ -34,7 +33,7 @@ import { usePersistentQueue } from "src/hooks/usePersistentQueue";
 import { PersistentQueueViewer } from "./PersistentQueueViewer";
 import Mousetrap from "mousetrap";
 import { OrganizedButton } from "./OrganizedButton";
-import { ConfigurationContext } from "src/hooks/Config";
+import { useConfigurationContext } from "src/hooks/Config";
 import { getPlayerPosition } from "src/components/ScenePlayer/util";
 import {
   faEllipsisV,
@@ -53,7 +52,9 @@ import { lazyComponent } from "src/utils/lazyComponent";
 import cx from "classnames";
 import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { PatchComponent, PatchContainerComponent } from "src/patch";
+import { SceneMergeModal } from "../SceneMergeDialog";
 import { goBackOrReplace } from "src/utils/history";
+import { FormattedDate } from "src/components/Shared/Date";
 
 const SubmitStashBoxDraft = lazyComponent(
   () => import("src/components/Dialogs/SubmitDraft")
@@ -186,9 +187,10 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
 
   const Toast = useToast();
   const intl = useIntl();
+  const history = useHistory();
   const [updateScene] = useSceneUpdate();
   const [generateScreenshot] = useSceneGenerateScreenshot();
-  const { configuration } = useContext(ConfigurationContext);
+  const { configuration } = useConfigurationContext();
 
   const [showDraftModal, setShowDraftModal] = useState(false);
   const boxes = configuration?.general?.stashBoxes ?? [];
@@ -209,6 +211,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
 
   const [activeTabKey, setActiveTabKey] = useState("scene-details-panel");
 
+  const [isMerging, setIsMerging] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState<boolean>(false);
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
 
@@ -351,6 +354,24 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
     }
   }
 
+  function maybeRenderMergeDialog() {
+    if (!scene.id) return;
+    return (
+      <SceneMergeModal
+        show={isMerging}
+        onClose={(mergedId) => {
+          setIsMerging(false);
+          if (mergedId !== undefined && mergedId !== scene.id) {
+            // By default, the merge destination is the current scene, but
+            // the user can change it, in which case we need to redirect.
+            history.replace(`/scenes/${mergedId}`);
+          }
+        }}
+        scenes={[{ id: scene.id, title: objectTitle(scene) }]}
+      />
+    );
+  }
+
   function maybeRenderDeleteDialog() {
     if (isDeleteAlertOpen) {
       return (
@@ -423,6 +444,14 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
             <FormattedMessage id="actions.submit_stash_box" />
           </Dropdown.Item>
         )}
+        <Dropdown.Item
+          key="merge-scene"
+          className="bg-secondary text-white"
+          onClick={() => setIsMerging(true)}
+        >
+          <FormattedMessage id="actions.merge" />
+          ...
+        </Dropdown.Item>
         <Dropdown.Item
           key="delete-scene"
           className="bg-secondary text-white"
@@ -600,6 +629,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
         <title>{title}</title>
       </Helmet>
       {maybeRenderSceneGenerateDialog()}
+      {maybeRenderMergeDialog()}
       {maybeRenderDeleteDialog()}
       <div
         className={`scene-tabs order-xl-first order-last ${
@@ -626,13 +656,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
 
           <div className="scene-subheader">
             <span className="date" data-value={scene.date}>
-              {!!scene.date && (
-                <FormattedDate
-                  value={scene.date}
-                  format="long"
-                  timeZone="utc"
-                />
-              )}
+              {!!scene.date && <FormattedDate value={scene.date} />}
             </span>
             <VideoFrameRateResolution
               width={file?.width}
@@ -701,7 +725,7 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   match,
 }) => {
   const { id } = match.params;
-  const { configuration } = useContext(ConfigurationContext);
+  const { configuration } = useConfigurationContext();
   const { data, loading, error } = useFindScene(id);
   const {
     queue: persistentQueueScenes,
