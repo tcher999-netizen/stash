@@ -1,4 +1,4 @@
-CREATE TABLE `scene_queue` (
+CREATE TABLE IF NOT EXISTS `scene_queue` (
   `scene_id` integer not null,
   `position` integer not null,
   `created_at` datetime not null default CURRENT_TIMESTAMP,
@@ -7,4 +7,4 @@ CREATE TABLE `scene_queue` (
   PRIMARY KEY (`scene_id`)
 );
 
-CREATE INDEX `index_scene_queue_position` ON `scene_queue` (`position`);
+CREATE INDEX IF NOT EXISTS `index_scene_queue_position` ON `scene_queue` (`position`);
