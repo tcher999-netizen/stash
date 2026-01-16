@@ -284,3 +284,9 @@ type HistoryMutationResult {
   count: Int!
   history: [Time!]!
 }
+
+input SceneUploadCaptionInput {
+  scene_id: ID!
+  caption_file: Upload!
+  language_code: String
+}

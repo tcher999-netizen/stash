@@ -30,6 +30,7 @@ import { PatchComponent } from "src/patch";
 import { StudioOverlay } from "../Shared/GridCard/StudioOverlay";
 import { GroupTag } from "../Groups/GroupTag";
 import { FileSize } from "../Shared/FileSize";
+import { SceneQueueButton } from "./SceneCardEnhanced";
 
 interface IScenePreviewProps {
   isPortrait: boolean;
@@ -345,7 +346,12 @@ const SceneCardDetails = PatchComponent(
 const SceneCardOverlays = PatchComponent(
   "SceneCard.Overlays",
   (props: ISceneCardProps) => {
-    return <StudioOverlay studio={props.scene.studio} />;
+    return (
+      <>
+        <StudioOverlay studio={props.scene.studio} />
+        <SceneQueueButton scene={props.scene} compact={props.compact} />
+      </>
+    );
   }
 );
 

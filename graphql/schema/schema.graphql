@@ -334,6 +334,9 @@ type Mutation {
 
   sceneAssignFile(input: AssignSceneFileInput!): Boolean!
 
+  "Upload a caption/subtitle file for a scene"
+  sceneUploadCaption(input: SceneUploadCaptionInput!): Scene
+
   imageUpdate(input: ImageUpdateInput!): Image
   bulkImageUpdate(input: BulkImageUpdateInput!): [Image!]
   imageDestroy(input: ImageDestroyInput!): Boolean!

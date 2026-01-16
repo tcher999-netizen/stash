@@ -78,6 +78,8 @@ const SceneDuplicateChecker = lazyComponent(
   () => import("./components/SceneDuplicateChecker/SceneDuplicateChecker")
 );
 
+const QueuePage = lazyComponent(() => import("./components/Queue/QueuePage"));
+
 const appleRendering = isPlatformUniquelyRenderedByApple();
 
 initPolyfills();
@@ -245,6 +247,7 @@ export const App: React.FC = () => {
             <Route path="/tags" component={Tags} />
             <Route path="/studios" component={Studios} />
             <Route path="/groups" component={Groups} />
+            <Route path="/queue" component={QueuePage} />
             <Route path="/stats" component={Stats} />
             <Route path="/settings" component={Settings} />
             <Route

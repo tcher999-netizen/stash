@@ -123,3 +123,9 @@ mutation SceneMerge($input: SceneMergeInput!) {
     id
   }
 }
+
+mutation SceneUploadCaption($input: SceneUploadCaptionInput!) {
+  sceneUploadCaption(input: $input) {
+    ...SceneData
+  }
+}

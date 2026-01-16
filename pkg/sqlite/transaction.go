@@ -128,6 +128,7 @@ func (db *Database) Repository() models.Repository {
 		Performer:      db.Performer,
 		Scene:          db.Scene,
 		SceneMarker:    db.SceneMarker,
+		SceneQueue:     db.SceneQueue,
 		Studio:         db.Studio,
 		Tag:            db.Tag,
 		SavedFilter:    db.SavedFilter,

@@ -19,6 +19,7 @@ import { TextField, URLField, URLsField } from "src/utils/field";
 import { StashIDPill } from "src/components/Shared/StashID";
 import { PatchComponent } from "../../../patch";
 import { FileSize } from "src/components/Shared/FileSize";
+import { CaptionUpload } from "./CaptionUpload";
 
 interface IFileInfoPanelProps {
   sceneID: string;
@@ -296,6 +297,8 @@ const _SceneFileInfoPanel: React.FC<ISceneFileInfoPanelProps> = (
         <URLsField id="urls" urls={props.scene.urls} truncate />
         {renderStashIDs()}
       </dl>
+
+      <CaptionUpload scene={props.scene} />
 
       {filesPanel}
     </>

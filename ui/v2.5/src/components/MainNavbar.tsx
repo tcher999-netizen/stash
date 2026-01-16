@@ -29,6 +29,7 @@ import {
   faHeart,
   faImage,
   faImages,
+  faListOl,
   faMapMarkerAlt,
   faPlayCircle,
   faQuestionCircle,
@@ -82,6 +83,10 @@ const messages = defineMessages({
     id: "galleries",
     defaultMessage: "Galleries",
   },
+  queue: {
+    id: "queue",
+    defaultMessage: "Queue",
+  },
   sceneTagger: {
     id: "sceneTagger",
     defaultMessage: "Scene Tagger",
@@ -110,6 +115,13 @@ const allMenuItems: IMenuItem[] = [
     href: "/images",
     icon: faImage,
     hotkey: "g i",
+  },
+  {
+    name: "queue",
+    message: messages.queue,
+    href: "/queue",
+    icon: faListOl,
+    hotkey: "g q",
   },
   {
     name: "groups",
@@ -200,6 +212,11 @@ export const MainNavbar: React.FC = () => {
       }
       return item;
     });
+
+    // Always include queue even if not in config
+    if (!cfgMenuItems.includes("queue")) {
+      cfgMenuItems = [...cfgMenuItems, "queue"];
+    }
 
     return allMenuItems.filter((menuItem) =>
       cfgMenuItems!.includes(menuItem.name)

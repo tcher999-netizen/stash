@@ -848,6 +848,21 @@ export const mutateSceneAssignFile = (sceneID: string, fileID: string) =>
     },
   });
 
+export const useSceneUploadCaption = () =>
+  GQL.useSceneUploadCaptionMutation({
+    update(cache, result) {
+      if (!result.data?.sceneUploadCaption) return;
+
+      // refetch the scene to update captions
+      cache.evict({
+        id: cache.identify({
+          __typename: "Scene",
+          id: result.data.sceneUploadCaption.id,
+        }),
+      });
+    },
+  });
+
 export const mutateSceneMerge = (
   destination: string,
   source: string[],

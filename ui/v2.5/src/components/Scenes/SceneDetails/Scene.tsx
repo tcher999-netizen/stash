@@ -30,6 +30,8 @@ import { Counter } from "src/components/Shared/Counter";
 import { useToast } from "src/hooks/Toast";
 import SceneQueue, { QueuedScene } from "src/models/sceneQueue";
 import { ListFilterModel } from "src/models/list-filter/filter";
+import { usePersistentQueue } from "src/hooks/usePersistentQueue";
+import { PersistentQueueViewer } from "./PersistentQueueViewer";
 import Mousetrap from "mousetrap";
 import { OrganizedButton } from "./OrganizedButton";
 import { ConfigurationContext } from "src/hooks/Config";
@@ -149,6 +151,7 @@ interface IProps {
   collapsed: boolean;
   setCollapsed: (state: boolean) => void;
   setContinuePlaylist: (value: boolean) => void;
+  isPersistentQueue?: boolean;
 }
 
 interface ISceneParams {
@@ -178,6 +181,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
     collapsed,
     setCollapsed,
     setContinuePlaylist,
+    isPersistentQueue,
   } = props;
 
   const Toast = useToast();
@@ -513,20 +517,28 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
             <SceneDetailPanel scene={scene} />
           </Tab.Pane>
           <Tab.Pane eventKey="scene-queue-panel">
-            <QueueViewer
-              scenes={queueScenes}
-              currentID={scene.id}
-              continue={continuePlaylist}
-              setContinue={setContinuePlaylist}
-              onSceneClicked={onQueueSceneClicked}
-              onNext={onQueueNext}
-              onPrevious={onQueuePrevious}
-              onRandom={onQueueRandom}
-              start={queueStart}
-              hasMoreScenes={queueHasMoreScenes}
-              onLessScenes={onQueueLessScenes}
-              onMoreScenes={onQueueMoreScenes}
-            />
+            {isPersistentQueue ? (
+              <PersistentQueueViewer
+                currentID={scene.id}
+                onSceneClicked={onQueueSceneClicked}
+                embedded={true}
+              />
+            ) : (
+              <QueueViewer
+                scenes={queueScenes}
+                currentID={scene.id}
+                continue={continuePlaylist}
+                setContinue={setContinuePlaylist}
+                onSceneClicked={onQueueSceneClicked}
+                onNext={onQueueNext}
+                onPrevious={onQueuePrevious}
+                onRandom={onQueueRandom}
+                start={queueStart}
+                hasMoreScenes={queueHasMoreScenes}
+                onLessScenes={onQueueLessScenes}
+                onMoreScenes={onQueueMoreScenes}
+              />
+            )}
           </Tab.Pane>
           <Tab.Pane eventKey="scene-markers-panel">
             <SceneMarkersPanel
@@ -691,6 +703,10 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   const { id } = match.params;
   const { configuration } = useContext(ConfigurationContext);
   const { data, loading, error } = useFindScene(id);
+  const {
+    queue: persistentQueueScenes,
+    removeFromQueue: removeFromPersistentQueue
+  } = usePersistentQueue();
 
   const [scene, setScene] = useState<GQL.SceneDataFragment>();
 
@@ -706,10 +722,21 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
     () => new URLSearchParams(location.search),
     [location.search]
   );
-  const sceneQueue = useMemo(
-    () => SceneQueue.fromQueryParameters(queryParams),
+
+  // Check if we're using the persistent queue
+  const isPersistentQueue = useMemo(
+    () => queryParams.get("queueType") === "persistent",
     [queryParams]
   );
+
+  const sceneQueue = useMemo(() => {
+    if (isPersistentQueue && persistentQueueScenes.length > 0) {
+      // Create a SceneQueue from the persistent queue
+      return SceneQueue.fromSceneIDList(persistentQueueScenes.map(s => s.id));
+    }
+    return SceneQueue.fromQueryParameters(queryParams);
+  }, [queryParams, isPersistentQueue, persistentQueueScenes]);
+
   const queryContinue = useMemo(() => {
     let cont = queryParams.get("continue");
     if (cont) {
@@ -785,12 +812,16 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   }
 
   useEffect(() => {
-    if (sceneQueue.query) {
+    if (isPersistentQueue && persistentQueueScenes.length > 0) {
+      // For persistent queue, fetch fresh data for the scene IDs
+      const sceneIDs = persistentQueueScenes.map(s => Number(s.id));
+      getQueueScenes(sceneIDs);
+    } else if (sceneQueue.query) {
       getQueueFilterScenes(sceneQueue.query);
     } else if (sceneQueue.sceneIDs) {
       getQueueScenes(sceneQueue.sceneIDs);
     }
-  }, [sceneQueue]);
+  }, [sceneQueue, isPersistentQueue, persistentQueueScenes]);
 
   async function onQueueLessScenes() {
     if (!sceneQueue.query || queueStart <= 1) {
@@ -834,11 +865,24 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   }
 
   function loadScene(sceneID: string, autoPlay?: boolean, newPage?: number) {
-    const sceneLink = sceneQueue.makeLink(sceneID, {
-      newPage,
-      autoPlay,
-      continue: continuePlaylist,
-    });
+    let sceneLink: string;
+
+    if (isPersistentQueue) {
+      // For persistent queue, maintain the queue type
+      const params = new URLSearchParams();
+      params.set("queueType", "persistent");
+      if (continuePlaylist) params.set("continue", "true");
+      if (autoPlay) params.set("autoplay", "true");
+      sceneLink = `/scenes/${sceneID}?${params.toString()}`;
+    } else {
+      // Use the regular queue system
+      sceneLink = sceneQueue.makeLink(sceneID, {
+        newPage,
+        autoPlay,
+        continue: continuePlaylist,
+      });
+    }
+
     history.replace(sceneLink);
   }
 
@@ -904,6 +948,11 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   }
 
   function onComplete() {
+    // Remove from persistent queue if watching from it
+    if (isPersistentQueue && id) {
+      removeFromPersistentQueue(id);
+    }
+
     // load the next scene if we're continuing
     if (continuePlaylist) {
       queueNext(true);
@@ -963,6 +1012,7 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
         collapsed={collapsed}
         setCollapsed={setCollapsed}
         setContinuePlaylist={setContinuePlaylist}
+        isPersistentQueue={isPersistentQueue}
       />
       <div className={`scene-player-container ${collapsed ? "expanded" : ""}`}>
         <ScenePlayer
