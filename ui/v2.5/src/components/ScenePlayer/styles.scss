@@ -345,6 +345,28 @@ $sceneTabWidth: 450px;
     z-index: 1;
   }
 
+  .vjs-speed-indicator {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 4px;
+    color: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 1.4em;
+    left: 50%;
+    opacity: 0;
+    padding: 6px 14px;
+    pointer-events: none;
+    position: absolute;
+    top: 10%;
+    transform: translateX(-50%);
+    transition: opacity 0.3s ease;
+    z-index: 100;
+
+    &.visible {
+      opacity: 1;
+      transition: none;
+    }
+  }
+
   .vjs-text-track-settings select {
     background: #fff;
   }

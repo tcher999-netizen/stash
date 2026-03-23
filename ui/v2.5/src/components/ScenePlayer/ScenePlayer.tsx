@@ -365,7 +365,7 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
         nativeControlsForTouch: false,
         playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
         inactivityTimeout: 700,
-        preload: "none",
+        preload: "auto",
         playsinline: true,
         techOrder: ["chromecast", "html5"],
         userActions: {
@@ -489,6 +489,69 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
 
       vrMenu.setShowButton(showButton);
     }, [getPlayer, scene, vrTag]);
+
+    // Ctrl + Scroll wheel to control playback speed
+    useEffect(() => {
+      const player = getPlayer();
+      if (!player) return;
+
+      const el = player.el();
+      let hideTimeout: number;
+
+      // Create speed indicator overlay
+      let indicator = el.querySelector(
+        ".vjs-speed-indicator"
+      ) as HTMLElement | null;
+      if (!indicator) {
+        indicator = document.createElement("div");
+        indicator.className = "vjs-speed-indicator";
+        el.appendChild(indicator);
+      }
+
+      function showSpeed(rate: number) {
+        if (!indicator) return;
+        indicator.textContent = `${rate.toFixed(2)}x`;
+        indicator.classList.add("visible");
+        clearTimeout(hideTimeout);
+        hideTimeout = window.setTimeout(() => {
+          indicator!.classList.remove("visible");
+        }, 800);
+      }
+
+      function onWheel(event: WheelEvent) {
+        if (!event.ctrlKey) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const currentRate = player!.playbackRate();
+        const step = 0.05;
+        const min = 0.25;
+        const max = 2;
+
+        let newRate: number;
+        if (event.deltaY < 0) {
+          // Scroll up - increase speed
+          newRate = Math.min(currentRate + step, max);
+        } else {
+          // Scroll down - decrease speed
+          newRate = Math.max(currentRate - step, min);
+        }
+
+        // Round to avoid floating point drift
+        newRate = Math.round(newRate * 100) / 100;
+        player!.playbackRate(newRate);
+        showSpeed(newRate);
+      }
+
+      el.addEventListener("wheel", onWheel, { passive: false });
+
+      return () => {
+        el.removeEventListener("wheel", onWheel);
+        clearTimeout(hideTimeout);
+        indicator?.remove();
+      };
+    }, [getPlayer]);
 
     // Player event handlers
     useEffect(() => {
