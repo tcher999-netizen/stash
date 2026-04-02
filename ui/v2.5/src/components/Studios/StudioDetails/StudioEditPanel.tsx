@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useIntl } from "react-intl";
+import { FormattedMessage, useIntl } from "react-intl";
 import * as GQL from "src/core/generated-graphql";
 import * as yup from "yup";
 import Mousetrap from "mousetrap";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { DetailsEditNavbar } from "src/components/Shared/DetailsEditNavbar";
-import { Button, Form } from "react-bootstrap";
+import { Button, Dropdown, Form } from "react-bootstrap";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import ImageUtils from "src/utils/image";
 import { addUpdateStashID, getStashIDs } from "src/utils/stashIds";
+import { stashboxDisplayName } from "src/utils/stashbox";
 import { useFormik } from "formik";
 import { Prompt } from "react-router-dom";
 import isEqual from "lodash-es/isEqual";
+import { uniq } from "lodash-es";
 import { useToast } from "src/hooks/Toast";
 import { useConfigurationContext } from "src/hooks/Config";
 import { handleUnsavedChanges } from "src/utils/navigation";
@@ -21,6 +23,8 @@ import { Studio, StudioSelect } from "../StudioSelect";
 import { useTagsEdit } from "src/hooks/tagsEdit";
 import { Icon } from "src/components/Shared/Icon";
 import StashBoxIDSearchModal from "src/components/Shared/StashBoxIDSearchModal";
+import StudioStashBoxModal, { IStashBox } from "./StudioStashBoxModal";
+import { StudioScrapeDialog } from "./StudioScrapeDialog";
 
 interface IStudioEditPanel {
   studio: Partial<GQL.StudioDataFragment>;
@@ -47,6 +51,11 @@ export const StudioEditPanel: React.FC<IStudioEditPanel> = ({
 
   // Editing state
   const [isStashIDSearchOpen, setIsStashIDSearchOpen] = useState(false);
+  const [scraper, setScraper] = useState<IStashBox | undefined>();
+  const [isScraperModalOpen, setIsScraperModalOpen] = useState(false);
+  const [scrapedStudio, setScrapedStudio] = useState<
+    GQL.ScrapedStudio | undefined
+  >();
 
   // Network state
   const [isLoading, setIsLoading] = useState(false);
@@ -86,8 +95,9 @@ export const StudioEditPanel: React.FC<IStudioEditPanel> = ({
     onSubmit: (values) => onSave(schema.cast(values)),
   });
 
-  const { tagsControl } = useTagsEdit(studio.tags, (ids) =>
-    formik.setFieldValue("tag_ids", ids)
+  const { tags, updateTagsStateFromScraper, tagsControl } = useTagsEdit(
+    studio.tags,
+    (ids) => formik.setFieldValue("tag_ids", ids)
   );
 
   function onSetParentStudio(item: Studio | null) {
@@ -164,6 +174,162 @@ export const StudioEditPanel: React.FC<IStudioEditPanel> = ({
     );
   }
 
+  function updateStudioEditStateFromScraper(
+    state: Partial<GQL.ScrapedStudio>
+  ) {
+    if (state.name) {
+      formik.setFieldValue("name", state.name);
+    }
+    if (state.aliases) {
+      formik.setFieldValue(
+        "aliases",
+        state.aliases
+          .split(",")
+          .map((a) => a.trim())
+          .filter((a) => a)
+      );
+    }
+    if (state.urls) {
+      formik.setFieldValue(
+        "urls",
+        uniq((formik.values.urls ?? []).concat(state.urls))
+      );
+    }
+    if (state.details) {
+      formik.setFieldValue("details", state.details);
+    }
+    if (state.parent?.stored_id) {
+      formik.setFieldValue("parent_id", state.parent.stored_id);
+      setParentStudio({
+        id: state.parent.stored_id,
+        name: state.parent.name ?? "",
+        aliases: [],
+      });
+    }
+    updateTagsStateFromScraper(state.tags ?? undefined);
+
+    // image is a base64 string
+    // overwrite if not new since it came from a dialog
+    // overwrite if image is unset
+    if ((!isNew || !formik.values.image) && state.image) {
+      formik.setFieldValue("image", state.image);
+    }
+
+    updateStashIDs(state.remote_site_id);
+  }
+
+  function updateStashIDs(remoteSiteID: string | null | undefined) {
+    if (remoteSiteID && scraper?.endpoint) {
+      const newIDs =
+        formik.values.stash_ids?.filter(
+          (s) => s.endpoint !== scraper.endpoint
+        ) ?? [];
+      newIDs.push({
+        endpoint: scraper.endpoint,
+        stash_id: remoteSiteID,
+        updated_at: new Date().toISOString(),
+      });
+      formik.setFieldValue("stash_ids", newIDs);
+    }
+  }
+
+  function onScraperSelected(s: IStashBox) {
+    setScraper(s);
+    setIsScraperModalOpen(true);
+  }
+
+  function onScrapeStashBox(studioResult: GQL.ScrapedStudio) {
+    setIsScraperModalOpen(false);
+
+    // if this is a new studio, just dump the data
+    if (isNew) {
+      updateStudioEditStateFromScraper(studioResult);
+      setScraper(undefined);
+    } else {
+      setScrapedStudio(studioResult);
+    }
+  }
+
+  function onScrapeDialogClosed(s?: GQL.ScrapedStudio) {
+    if (s) {
+      updateStudioEditStateFromScraper(s);
+    }
+    setScrapedStudio(undefined);
+    setScraper(undefined);
+  }
+
+  function renderScraperMenu() {
+    const stashBoxes = stashConfig?.general.stashBoxes ?? [];
+
+    if (stashBoxes.length === 0) {
+      return null;
+    }
+
+    const popover = (
+      <Dropdown.Menu id="studio-scraper-popover">
+        {stashBoxes.map((s, index) => (
+          <Dropdown.Item
+            as={Button}
+            key={s.endpoint}
+            className="minimal"
+            onClick={() => onScraperSelected({ ...s, index })}
+          >
+            {stashboxDisplayName(s.name, index)}
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    );
+
+    return (
+      <Dropdown className="d-inline-block">
+        <Dropdown.Toggle variant="secondary" className="mr-2">
+          <FormattedMessage id="actions.scrape_with" />
+        </Dropdown.Toggle>
+        {popover}
+      </Dropdown>
+    );
+  }
+
+  function renderScrapeModal() {
+    if (!isScraperModalOpen || !scraper) return null;
+
+    return (
+      <StudioStashBoxModal
+        instance={scraper}
+        onHide={() => {
+          setScraper(undefined);
+          setIsScraperModalOpen(false);
+        }}
+        onSelectStudio={onScrapeStashBox}
+        name={formik.values.name || ""}
+      />
+    );
+  }
+
+  function maybeRenderScrapeDialog() {
+    if (!scrapedStudio || !scraper) {
+      return null;
+    }
+
+    const currentStudio = {
+      ...formik.values,
+      image: formik.values.image ?? studio.image_path,
+    };
+
+    return (
+      <StudioScrapeDialog
+        studio={currentStudio}
+        studioTags={tags}
+        parentStudio={parentStudio}
+        scraped={scrapedStudio}
+        scraper={scraper}
+        onClose={(s) => {
+          onScrapeDialogClosed(s);
+        }}
+      />
+    );
+  }
+
   const {
     renderField,
     renderInputField,
@@ -194,6 +360,8 @@ export const StudioEditPanel: React.FC<IStudioEditPanel> = ({
 
   return (
     <>
+      {renderScrapeModal()}
+      {maybeRenderScrapeDialog()}
       {isStashIDSearchOpen && (
         <StashBoxIDSearchModal
           entityType="studio"
@@ -260,6 +428,7 @@ export const StudioEditPanel: React.FC<IStudioEditPanel> = ({
         onClearImage={() => onImageLoad(null)}
         onDelete={onDelete}
         acceptSVG
+        customButtons={renderScraperMenu()}
       />
     </>
   );

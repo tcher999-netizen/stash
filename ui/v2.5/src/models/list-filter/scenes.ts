@@ -91,6 +91,17 @@ export const PerformerAgeCriterionOption =
 export const DurationCriterionOption =
   createDurationCriterionOption("duration");
 
+export const OCounterCriterionOption = createMandatoryNumberCriterionOption(
+  "o_counter",
+  "o_count",
+  {
+    sfwMessageID: "o_count_sfw",
+  }
+);
+
+export const PerformerCountCriterionOption =
+  createMandatoryNumberCriterionOption("performer_count");
+
 const criterionOptions = [
   createStringCriterionOption("title"),
   createStringCriterionOption("code", "scene_code"),
@@ -103,9 +114,7 @@ const criterionOptions = [
   DuplicatedCriterionOption,
   OrganizedCriterionOption,
   RatingCriterionOption,
-  createMandatoryNumberCriterionOption("o_counter", "o_count", {
-    sfwMessageID: "o_count_sfw",
-  }),
+  OCounterCriterionOption,
   ResolutionCriterionOption,
   OrientationCriterionOption,
   createMandatoryNumberCriterionOption("framerate"),
@@ -123,7 +132,7 @@ const criterionOptions = [
   createMandatoryNumberCriterionOption("tag_count"),
   PerformerTagsCriterionOption,
   PerformersCriterionOption,
-  createMandatoryNumberCriterionOption("performer_count"),
+  PerformerCountCriterionOption,
   PerformerAgeCriterionOption,
   PerformerFavoriteCriterionOption,
   // StudioTagsCriterionOption,

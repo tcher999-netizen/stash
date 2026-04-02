@@ -135,6 +135,32 @@ models:
     model: github.com/stashapp/stash/pkg/scraper.Source
   SavedFindFilterType:
     model: github.com/stashapp/stash/pkg/models.FindFilterType
+  # playlist types
+  Playlist:
+    model: github.com/stashapp/stash/pkg/models.Playlist
+    fields:
+      scene_count:
+        resolver: true
+      front_image_path:
+        resolver: true
+  PlaylistEntry:
+    model: github.com/stashapp/stash/internal/api.PlaylistEntry
+    fields:
+      scene:
+        resolver: true
+      created_at:
+        resolver: true
+  SceneQueueEntry:
+    model: github.com/stashapp/stash/internal/api.SceneQueueEntry
+    fields:
+      scene:
+        resolver: true
+      created_at:
+        resolver: true
+  PlaylistFilterType:
+    model: github.com/stashapp/stash/pkg/models.PlaylistFilterType
+  FindPlaylistsResultType:
+    model: github.com/stashapp/stash/pkg/models.FindPlaylistsResultType
   # force resolvers
   ConfigResult:
     fields:

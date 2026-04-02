@@ -39,6 +39,7 @@ import {
   faEllipsisV,
   faChevronRight,
   faChevronLeft,
+  faList,
 } from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
 import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
@@ -55,6 +56,8 @@ import { PatchComponent, PatchContainerComponent } from "src/patch";
 import { SceneMergeModal } from "../SceneMergeDialog";
 import { goBackOrReplace } from "src/utils/history";
 import { FormattedDate } from "src/components/Shared/Date";
+import { PlaylistButton } from "../PlaylistButton";
+import { usePlaylistEntries, usePlaylists } from "src/hooks/usePlaylist";
 
 const SubmitStashBoxDraft = lazyComponent(
   () => import("src/components/Dialogs/SubmitDraft")
@@ -153,6 +156,10 @@ interface IProps {
   setCollapsed: (state: boolean) => void;
   setContinuePlaylist: (value: boolean) => void;
   isPersistentQueue?: boolean;
+  playlistId?: string;
+  playlistName?: string;
+  playlistCurrentPosition?: number;
+  playlistTotalScenes?: number;
 }
 
 interface ISceneParams {
@@ -183,6 +190,10 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
     setCollapsed,
     setContinuePlaylist,
     isPersistentQueue,
+    playlistId,
+    playlistName,
+    playlistCurrentPosition,
+    playlistTotalScenes,
   } = props;
 
   const Toast = useToast();
@@ -665,6 +676,29 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
             />
           </div>
 
+          {playlistId && playlistName && (
+            <div className="scene-playlist-context mb-2">
+              <Link to={`/playlists/${playlistId}`} className="badge badge-info p-2">
+                <Icon icon={faList} className="mr-1" />
+                <FormattedMessage
+                  id="playlist.now_playing"
+                  values={{ name: playlistName }}
+                />
+                {playlistCurrentPosition !== undefined && playlistTotalScenes !== undefined && (
+                  <span className="ml-2">
+                    <FormattedMessage
+                      id="playlist.scene_position"
+                      values={{
+                        current: playlistCurrentPosition,
+                        total: playlistTotalScenes,
+                      }}
+                    />
+                  </span>
+                )}
+              </Link>
+            </div>
+          )}
+
           <div className="scene-toolbar">
             <span className="scene-toolbar-group">
               <RatingSystem
@@ -689,6 +723,9 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
                   value={scene.o_counter ?? 0}
                   onIncrement={() => onIncrementOClick()}
                 />
+              </span>
+              <span>
+                <PlaylistButton sceneId={scene.id} />
               </span>
               <span>
                 <OrganizedButton
@@ -753,13 +790,39 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
     [queryParams]
   );
 
+  // Check if we're playing from a playlist
+  const playlistId = useMemo(
+    () => queryParams.get("playlist") || undefined,
+    [queryParams]
+  );
+
+  const { entries: playlistEntries, loading: playlistEntriesLoading } =
+    usePlaylistEntries(playlistId || "");
+  const { playlists: allPlaylists } = usePlaylists();
+
+  const playlistInfo = useMemo(() => {
+    if (!playlistId) return undefined;
+    const pl = allPlaylists.find((p) => p.id === playlistId);
+    if (!pl) return undefined;
+    const position = playlistEntries.findIndex((e) => e.scene.id === id);
+    return {
+      name: pl.name,
+      currentPosition: position >= 0 ? position + 1 : undefined,
+      totalScenes: playlistEntries.length,
+    };
+  }, [playlistId, allPlaylists, playlistEntries, id]);
+
   const sceneQueue = useMemo(() => {
+    if (playlistId && playlistEntries.length > 0) {
+      // Create a SceneQueue from playlist entries
+      return SceneQueue.fromSceneIDList(playlistEntries.map(e => e.scene.id));
+    }
     if (isPersistentQueue && persistentQueueScenes.length > 0) {
       // Create a SceneQueue from the persistent queue
       return SceneQueue.fromSceneIDList(persistentQueueScenes.map(s => s.id));
     }
     return SceneQueue.fromQueryParameters(queryParams);
-  }, [queryParams, isPersistentQueue, persistentQueueScenes]);
+  }, [queryParams, isPersistentQueue, persistentQueueScenes, playlistId, playlistEntries]);
 
   const queryContinue = useMemo(() => {
     let cont = queryParams.get("continue");
@@ -836,7 +899,11 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   }
 
   useEffect(() => {
-    if (isPersistentQueue && persistentQueueScenes.length > 0) {
+    if (playlistId && playlistEntries.length > 0) {
+      // For playlist mode, use the playlist entries as queue
+      const sceneIDs = playlistEntries.map(e => Number(e.scene.id));
+      getQueueScenes(sceneIDs);
+    } else if (isPersistentQueue && persistentQueueScenes.length > 0) {
       // For persistent queue, fetch fresh data for the scene IDs
       const sceneIDs = persistentQueueScenes.map(s => Number(s.id));
       getQueueScenes(sceneIDs);
@@ -845,7 +912,7 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
     } else if (sceneQueue.sceneIDs) {
       getQueueScenes(sceneQueue.sceneIDs);
     }
-  }, [sceneQueue, isPersistentQueue, persistentQueueScenes]);
+  }, [sceneQueue, isPersistentQueue, persistentQueueScenes, playlistId, playlistEntries]);
 
   async function onQueueLessScenes() {
     if (!sceneQueue.query || queueStart <= 1) {
@@ -891,7 +958,14 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   function loadScene(sceneID: string, autoPlay?: boolean, newPage?: number) {
     let sceneLink: string;
 
-    if (isPersistentQueue) {
+    if (playlistId) {
+      // For playlist mode, maintain the playlist param
+      const params = new URLSearchParams();
+      params.set("playlist", playlistId);
+      if (continuePlaylist) params.set("continue", "true");
+      if (autoPlay) params.set("autoplay", "true");
+      sceneLink = `/scenes/${sceneID}?${params.toString()}`;
+    } else if (isPersistentQueue) {
       // For persistent queue, maintain the queue type
       const params = new URLSearchParams();
       params.set("queueType", "persistent");
@@ -1037,6 +1111,10 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
         setCollapsed={setCollapsed}
         setContinuePlaylist={setContinuePlaylist}
         isPersistentQueue={isPersistentQueue}
+        playlistId={playlistId}
+        playlistName={playlistInfo?.name}
+        playlistCurrentPosition={playlistInfo?.currentPosition}
+        playlistTotalScenes={playlistInfo?.totalScenes}
       />
       <div className={`scene-player-container ${collapsed ? "expanded" : ""}`}>
         <ScenePlayer

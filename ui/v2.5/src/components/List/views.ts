@@ -33,4 +33,6 @@ export enum View {
   GroupScenes = "group_scenes",
   GroupSubGroups = "group_sub_groups",
   GroupPerformers = "group_performers",
+
+  PlaylistScenes = "playlist_scenes",
 }

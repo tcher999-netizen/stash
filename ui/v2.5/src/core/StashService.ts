@@ -149,6 +149,17 @@ export const useFindScenes = (filter?: ListFilterModel) =>
     },
   });
 
+export const makeFindScenesWithIds =
+  (ids: string[]) => (filter?: ListFilterModel) =>
+    GQL.useFindScenesQuery({
+      skip: filter === undefined || ids.length === 0,
+      variables: {
+        filter: filter?.makeFindFilter(),
+        scene_filter: filter?.makeFilter(),
+        ids,
+      },
+    });
+
 export const queryFindScenes = (filter: ListFilterModel) =>
   client.query<GQL.FindScenesQuery>({
     query: GQL.FindScenesDocument,

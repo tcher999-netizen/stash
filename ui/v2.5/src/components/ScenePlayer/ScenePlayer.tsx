@@ -350,8 +350,10 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
               {
                 streaming: {
                   buffer: {
-                    bufferTimeAtTopQuality: 30,
-                    bufferTimeAtTopQualityLongForm: 30,
+                    bufferTimeAtTopQuality: 120,
+                    bufferTimeAtTopQualityLongForm: 120,
+                    stableBufferTime: 120,
+                    bufferToKeep: 120,
                   },
                   gaps: {
                     jumpGaps: false,

@@ -22,9 +22,9 @@ type Repository struct {
 	Image          ImageReaderWriter
 	Group          GroupReaderWriter
 	Performer      PerformerReaderWriter
+	Playlist       PlaylistReaderWriter
 	Scene          SceneReaderWriter
 	SceneMarker    SceneMarkerReaderWriter
-	SceneQueue     SceneQueueReaderWriter
 	Studio         StudioReaderWriter
 	Tag            TagReaderWriter
 	SavedFilter    SavedFilterReaderWriter

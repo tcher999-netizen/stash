@@ -30,6 +30,7 @@ import { StudioOverlay } from "../Shared/GridCard/StudioOverlay";
 import { GroupTag } from "../Groups/GroupTag";
 import { FileSize } from "../Shared/FileSize";
 import { SceneQueueButton } from "./SceneCardEnhanced";
+import { PlaylistButton } from "./PlaylistButton";
 import { OCounterButton } from "../Shared/CountButton";
 
 interface IScenePreviewProps {
@@ -341,6 +342,7 @@ const SceneCardOverlays = PatchComponent(
       <>
         <StudioOverlay studio={props.scene.studio} />
         <SceneQueueButton scene={props.scene} compact={props.compact} />
+        <PlaylistButton sceneId={props.scene.id} compact />
       </>
     );
   }

@@ -37,7 +37,9 @@ RUN make flags-release flags-pie stash
 
 # Final Runnable Image
 FROM alpine:latest
-RUN apk add --no-cache ca-certificates vips-tools ffmpeg
+RUN apk add --no-cache ca-certificates vips-tools ffmpeg python3 py3-pip \
+    && rm -f /usr/lib/python3.*/EXTERNALLY-MANAGED \
+    && pip3 install --no-cache-dir cloudscraper requests lxml beautifulsoup4
 COPY --from=backend /stash/stash /usr/bin/
 ENV STASH_CONFIG_FILE=/root/.stash/config.yml
 EXPOSE 9999

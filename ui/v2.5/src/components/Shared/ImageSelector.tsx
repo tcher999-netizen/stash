@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import cx from "classnames";
 import { LoadingIndicator } from "./LoadingIndicator";
 import { Button } from "react-bootstrap";
-import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowLeft,
+  faArrowRight,
+  faTh,
+  faImage,
+} from "@fortawesome/free-solid-svg-icons";
 import { Icon } from "./Icon";
 import { FormattedMessage } from "react-intl";
 
@@ -24,6 +29,18 @@ export const ImageSelector: React.FC<IImageSelectorProps> = ({
   >("empty");
   const [loadDict, setLoadDict] = useState<Record<number, boolean>>({});
   const [currentImage, setCurrentImage] = useState<string>("");
+  const [galleryView, setGalleryView] = useState(false);
+  const prefetchedRef = useRef(false);
+
+  // Prefetch all images on mount
+  useEffect(() => {
+    if (prefetchedRef.current || images.length <= 1) return;
+    prefetchedRef.current = true;
+    images.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [images]);
 
   useEffect(() => {
     if (imageState !== "loading") {
@@ -50,6 +67,48 @@ export const ImageSelector: React.FC<IImageSelectorProps> = ({
   };
   const handleError = () => setImageState("error");
 
+  if (galleryView && images.length > 1) {
+    return (
+      <div className="image-selection">
+        <div className="select-buttons">
+          <h5 className="image-index">
+            <FormattedMessage
+              id="index_of_total"
+              values={{
+                index: imageIndex + 1,
+                total: images.length,
+              }}
+            />
+          </h5>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setGalleryView(false)}
+            title="Single view"
+          >
+            <Icon icon={faImage} />
+          </Button>
+        </div>
+        <div className="image-gallery-grid">
+          {images.map((src, i) => (
+            <div
+              key={i}
+              className={cx("image-gallery-thumb", {
+                selected: i === imageIndex,
+              })}
+              onClick={() => {
+                changeImage(i);
+                setGalleryView(false);
+              }}
+            >
+              <img src={src} alt="" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="image-selection">
       {images.length > 1 && (
@@ -68,6 +127,15 @@ export const ImageSelector: React.FC<IImageSelectorProps> = ({
           </h5>
           <Button onClick={setNext} disabled={images.length === 1}>
             <Icon icon={faArrowRight} />
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setGalleryView(true)}
+            className="ml-2"
+            title="Gallery view"
+          >
+            <Icon icon={faTh} />
           </Button>
         </div>
       )}

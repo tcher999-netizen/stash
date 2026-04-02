@@ -6,6 +6,7 @@ import (
 	"strconv"
 )
 
+// SceneQueueAdd adds a scene to the default playlist (backwards compatibility)
 func (r *mutationResolver) SceneQueueAdd(ctx context.Context, sceneID string) (bool, error) {
 	id, err := strconv.Atoi(sceneID)
 	if err != nil {
@@ -22,7 +23,13 @@ func (r *mutationResolver) SceneQueueAdd(ctx context.Context, sceneID string) (b
 			return fmt.Errorf("scene with id %d not found", id)
 		}
 
-		return r.repository.SceneQueue.Add(ctx, id)
+		// Get the default playlist
+		defaultPlaylist, err := r.repository.Playlist.FindDefault(ctx)
+		if err != nil {
+			return err
+		}
+
+		return r.repository.Playlist.AddScene(ctx, defaultPlaylist.ID, id)
 	}); err != nil {
 		return false, err
 	}
@@ -30,6 +37,7 @@ func (r *mutationResolver) SceneQueueAdd(ctx context.Context, sceneID string) (b
 	return true, nil
 }
 
+// SceneQueueRemove removes a scene from the default playlist (backwards compatibility)
 func (r *mutationResolver) SceneQueueRemove(ctx context.Context, sceneID string) (bool, error) {
 	id, err := strconv.Atoi(sceneID)
 	if err != nil {
@@ -37,7 +45,13 @@ func (r *mutationResolver) SceneQueueRemove(ctx context.Context, sceneID string)
 	}
 
 	if err := r.withTxn(ctx, func(ctx context.Context) error {
-		return r.repository.SceneQueue.Remove(ctx, id)
+		// Get the default playlist
+		defaultPlaylist, err := r.repository.Playlist.FindDefault(ctx)
+		if err != nil {
+			return err
+		}
+
+		return r.repository.Playlist.RemoveScene(ctx, defaultPlaylist.ID, id)
 	}); err != nil {
 		return false, err
 	}
@@ -45,6 +59,7 @@ func (r *mutationResolver) SceneQueueRemove(ctx context.Context, sceneID string)
 	return true, nil
 }
 
+// SceneQueueReorder reorders a scene in the default playlist (backwards compatibility)
 func (r *mutationResolver) SceneQueueReorder(ctx context.Context, sceneID string, position int) (bool, error) {
 	id, err := strconv.Atoi(sceneID)
 	if err != nil {
@@ -52,7 +67,13 @@ func (r *mutationResolver) SceneQueueReorder(ctx context.Context, sceneID string
 	}
 
 	if err := r.withTxn(ctx, func(ctx context.Context) error {
-		return r.repository.SceneQueue.Reorder(ctx, id, position)
+		// Get the default playlist
+		defaultPlaylist, err := r.repository.Playlist.FindDefault(ctx)
+		if err != nil {
+			return err
+		}
+
+		return r.repository.Playlist.ReorderScene(ctx, defaultPlaylist.ID, id, position)
 	}); err != nil {
 		return false, err
 	}
@@ -60,9 +81,16 @@ func (r *mutationResolver) SceneQueueReorder(ctx context.Context, sceneID string
 	return true, nil
 }
 
+// SceneQueueClear clears the default playlist (backwards compatibility)
 func (r *mutationResolver) SceneQueueClear(ctx context.Context) (bool, error) {
 	if err := r.withTxn(ctx, func(ctx context.Context) error {
-		return r.repository.SceneQueue.Clear(ctx)
+		// Get the default playlist
+		defaultPlaylist, err := r.repository.Playlist.FindDefault(ctx)
+		if err != nil {
+			return err
+		}
+
+		return r.repository.Playlist.ClearScenes(ctx, defaultPlaylist.ID)
 	}); err != nil {
 		return false, err
 	}

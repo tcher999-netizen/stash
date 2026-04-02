@@ -83,9 +83,9 @@ const messages = defineMessages({
     id: "galleries",
     defaultMessage: "Galleries",
   },
-  queue: {
-    id: "queue",
-    defaultMessage: "Queue",
+  playlists: {
+    id: "playlists",
+    defaultMessage: "Playlists",
   },
   sceneTagger: {
     id: "sceneTagger",
@@ -117,9 +117,9 @@ const allMenuItems: IMenuItem[] = [
     hotkey: "g i",
   },
   {
-    name: "queue",
-    message: messages.queue,
-    href: "/queue",
+    name: "playlists",
+    message: messages.playlists,
+    href: "/playlists",
     icon: faListOl,
     hotkey: "g q",
   },
@@ -213,9 +213,9 @@ export const MainNavbar: React.FC = () => {
       return item;
     });
 
-    // Always include queue even if not in config
-    if (!cfgMenuItems.includes("queue")) {
-      cfgMenuItems = [...cfgMenuItems, "queue"];
+    // Always include playlists even if not in config
+    if (!cfgMenuItems.includes("playlists")) {
+      cfgMenuItems = [...cfgMenuItems, "playlists"];
     }
 
     return allMenuItems.filter((menuItem) =>

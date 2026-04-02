@@ -18,6 +18,7 @@ import { StudioTagger } from "../Tagger/studios/StudioTagger";
 import { StudioCardGrid } from "./StudioCardGrid";
 import { View } from "../List/views";
 import { EditStudiosDialog } from "./EditStudiosDialog";
+import { StudioIdentifyDialog } from "./StudioIdentifyDialog";
 import { IItemListOperation } from "../List/FilteredListToolbar";
 import { PatchComponent } from "src/patch";
 
@@ -44,6 +45,10 @@ export const StudioList: React.FC<IStudioList> = PatchComponent(
     const history = useHistory();
     const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
     const [isExportAll, setIsExportAll] = useState(false);
+    const [isIdentifyDialogOpen, setIsIdentifyDialogOpen] = useState(false);
+    const [identifySelectedIds, setIdentifySelectedIds] = useState<string[]>(
+      []
+    );
 
     const filterMode = GQL.FilterMode.Studios;
 
@@ -52,6 +57,11 @@ export const StudioList: React.FC<IStudioList> = PatchComponent(
       {
         text: intl.formatMessage({ id: "actions.view_random" }),
         onClick: viewRandom,
+      },
+      {
+        text: `${intl.formatMessage({ id: "actions.identify" })}…`,
+        onClick: onIdentify,
+        isDisplayed: showWhenSelected,
       },
       {
         text: intl.formatMessage({ id: "actions.export" }),
@@ -63,6 +73,15 @@ export const StudioList: React.FC<IStudioList> = PatchComponent(
         onClick: onExportAll,
       },
     ];
+
+    async function onIdentify(
+      _result: GQL.FindStudiosQueryResult,
+      _filter: ListFilterModel,
+      selectedIds: Set<string>
+    ) {
+      setIdentifySelectedIds(Array.from(selectedIds.values()));
+      setIsIdentifyDialogOpen(true);
+    }
 
     function addKeybinds(
       result: GQL.FindStudiosQueryResult,
@@ -130,6 +149,17 @@ export const StudioList: React.FC<IStudioList> = PatchComponent(
         }
       }
 
+      function maybeRenderIdentifyDialog() {
+        if (isIdentifyDialogOpen) {
+          return (
+            <StudioIdentifyDialog
+              selectedIds={identifySelectedIds}
+              onClose={() => setIsIdentifyDialogOpen(false)}
+            />
+          );
+        }
+      }
+
       function renderStudios() {
         if (!result.data?.findStudios) return;
 
@@ -158,6 +188,7 @@ export const StudioList: React.FC<IStudioList> = PatchComponent(
       return (
         <>
           {maybeRenderExportDialog()}
+          {maybeRenderIdentifyDialog()}
           {renderStudios()}
         </>
       );

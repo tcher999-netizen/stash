@@ -104,6 +104,15 @@ func (r *Resolver) Folder() FolderResolver {
 func (r *Resolver) SavedFilter() SavedFilterResolver {
 	return &savedFilterResolver{r}
 }
+func (r *Resolver) Playlist() PlaylistResolver {
+	return &playlistResolver{r}
+}
+func (r *Resolver) PlaylistEntry() PlaylistEntryResolver {
+	return &playlistEntryResolver{r}
+}
+func (r *Resolver) SceneQueueEntry() SceneQueueEntryResolver {
+	return &sceneQueueEntryResolver{r}
+}
 func (r *Resolver) Plugin() PluginResolver {
 	return &pluginResolver{r}
 }
@@ -134,6 +143,9 @@ type imageFileResolver struct{ *Resolver }
 type basicFileResolver struct{ *Resolver }
 type folderResolver struct{ *Resolver }
 type savedFilterResolver struct{ *Resolver }
+type playlistResolver struct{ *Resolver }
+type playlistEntryResolver struct{ *Resolver }
+type sceneQueueEntryResolver struct{ *Resolver }
 type pluginResolver struct{ *Resolver }
 type configResultResolver struct{ *Resolver }
 

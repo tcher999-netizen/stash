@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 import cx from "classnames";
@@ -16,6 +16,8 @@ import {
   faArrowRight,
   faCheck,
   faExternalLinkAlt,
+  faImage,
+  faTh,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { ExternalLink } from "../Shared/ExternalLink";
@@ -50,6 +52,8 @@ const PerformerModal: React.FC<IPerformerModalProps> = ({
     "loading" | "error" | "loaded" | "empty"
   >("empty");
   const [loadDict, setLoadDict] = useState<Record<number, boolean>>({});
+  const [galleryView, setGalleryView] = useState(false);
+  const prefetchedRef = useRef(false);
   const [excluded, setExcluded] = useState<Record<string, boolean>>(
     excludedPerformerFields.reduce(
       (dict, field) => ({ ...dict, [field]: true }),
@@ -58,6 +62,16 @@ const PerformerModal: React.FC<IPerformerModalProps> = ({
   );
 
   const images = performer.images ?? [];
+
+  // Prefetch all images on mount
+  useEffect(() => {
+    if (prefetchedRef.current || images.length <= 1) return;
+    prefetchedRef.current = true;
+    images.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [images]);
 
   const changeImage = (index: number) => {
     setImageIndex(index);
@@ -158,6 +172,42 @@ const PerformerModal: React.FC<IPerformerModalProps> = ({
   function maybeRenderImage() {
     if (!images.length) return;
 
+    if (galleryView && images.length > 1) {
+      return (
+        <div className="col-5 image-selection">
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <h5 className="mb-0">
+              Select performer image — {imageIndex + 1} of {images.length}
+            </h5>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setGalleryView(false)}
+              title="Single view"
+            >
+              <Icon icon={faImage} />
+            </Button>
+          </div>
+          <div className="image-gallery-grid">
+            {images.map((src, i) => (
+              <div
+                key={i}
+                className={cx("image-gallery-thumb", {
+                  selected: i === imageIndex,
+                })}
+                onClick={() => {
+                  changeImage(i);
+                  setGalleryView(false);
+                }}
+              >
+                <img src={src} alt="" />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="col-5 image-selection">
         <div className="performer-image">
@@ -201,6 +251,17 @@ const PerformerModal: React.FC<IPerformerModalProps> = ({
           <Button onClick={setNext} disabled={images.length === 1}>
             <Icon icon={faArrowRight} />
           </Button>
+          {images.length > 1 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setGalleryView(true)}
+              className="ml-2 align-self-center"
+              title="Gallery view"
+            >
+              <Icon icon={faTh} />
+            </Button>
+          )}
         </div>
       </div>
     );

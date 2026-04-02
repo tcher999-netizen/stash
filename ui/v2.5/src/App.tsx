@@ -1,5 +1,6 @@
 import React, { Suspense, useEffect, useState } from "react";
 import {
+  Redirect,
   Route,
   Switch,
   useHistory,
@@ -83,6 +84,9 @@ const SceneDuplicateChecker = lazyComponent(
 );
 
 const QueuePage = lazyComponent(() => import("./components/Queue/QueuePage"));
+const Playlists = lazyComponent(
+  () => import("./components/Playlists/Playlists")
+);
 
 const appleRendering = isPlatformUniquelyRenderedByApple();
 
@@ -260,7 +264,12 @@ export const App: React.FC = () => {
             <Route path="/tags" component={Tags} />
             <Route path="/studios" component={Studios} />
             <Route path="/groups" component={Groups} />
-            <Route path="/queue" component={QueuePage} />
+            <Route path="/playlists" component={Playlists} />
+            <Route
+              exact
+              path="/queue"
+              render={() => <Redirect to="/playlists" />}
+            />
             <Route path="/stats" component={Stats} />
             <Route path="/settings" component={Settings} />
             <Route
