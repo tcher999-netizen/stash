@@ -127,6 +127,9 @@ type SceneQueryOptions struct {
 
 	TotalDuration bool
 	TotalSize     bool
+
+	// If set, restricts results to scenes with these IDs
+	SceneIDs []int
 }
 
 type SceneQueryResult struct {

@@ -26,6 +26,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { SceneMergeModal } from "./SceneMergeDialog";
+import { AddToPlaylistDialog } from "./AddToPlaylistDialog";
 import { objectTitle } from "src/core/files";
 import TextUtils from "src/utils/text";
 import { View } from "../List/views";
@@ -58,9 +59,12 @@ import { HasMarkersCriterionOption } from "src/models/list-filter/criteria/has-m
 import { SidebarBooleanFilter } from "../List/Filters/BooleanFilter";
 import {
   DurationCriterionOption,
+  OCounterCriterionOption,
   PerformerAgeCriterionOption,
+  PerformerCountCriterionOption,
 } from "src/models/list-filter/scenes";
 import { SidebarAgeFilter } from "../List/Filters/SidebarAgeFilter";
+import { SidebarCountFilter } from "../List/Filters/SidebarCountFilter";
 import { SidebarDurationFilter } from "../List/Filters/SidebarDurationFilter";
 import {
   FilteredSidebarHeader,
@@ -363,6 +367,20 @@ const SidebarContent: React.FC<{
           setFilter={setFilter}
           sectionID="performer_age"
         />
+        <SidebarCountFilter
+          title={<FormattedMessage id="o_count" />}
+          option={OCounterCriterionOption}
+          filter={filter}
+          setFilter={setFilter}
+          sectionID="o_counter"
+        />
+        <SidebarCountFilter
+          title={<FormattedMessage id="performer_count" />}
+          option={PerformerCountCriterionOption}
+          filter={filter}
+          setFilter={setFilter}
+          sectionID="performer_count"
+        />
       </ScenesFilterSidebarSections>
 
       <div className="sidebar-footer">
@@ -473,9 +491,11 @@ const SceneListOperations: React.FC<{
 interface IFilteredScenes {
   filterHook?: (filter: ListFilterModel) => ListFilterModel;
   defaultSort?: string;
+  defaultDisplayMode?: DisplayMode;
   view?: View;
   alterQuery?: boolean;
   fromGroupId?: string;
+  useFindScenesOverride?: typeof useFindScenes;
 }
 
 export const FilteredSceneList = (props: IFilteredScenes) => {
@@ -484,7 +504,15 @@ export const FilteredSceneList = (props: IFilteredScenes) => {
 
   const searchFocus = useFocus();
 
-  const { filterHook, defaultSort, view, alterQuery, fromGroupId } = props;
+  const {
+    filterHook,
+    defaultSort,
+    defaultDisplayMode,
+    view,
+    alterQuery,
+    fromGroupId,
+    useFindScenesOverride,
+  } = props;
 
   // States
   const {
@@ -500,11 +528,12 @@ export const FilteredSceneList = (props: IFilteredScenes) => {
       filterStateProps: {
         filterMode: GQL.FilterMode.Scenes,
         defaultSort,
+        defaultDisplayMode,
         view,
         useURL: alterQuery,
       },
       queryResultProps: {
-        useResult: useFindScenes,
+        useResult: useFindScenesOverride ?? useFindScenes,
         getCount: (r) => r.data?.findScenes.count ?? 0,
         getItems: (r) => r.data?.findScenes.scenes ?? [],
         filterHook,
@@ -714,6 +743,25 @@ export const FilteredSceneList = (props: IFilteredScenes) => {
     {
       text: `${intl.formatMessage({ id: "actions.merge" })}…`,
       onClick: () => onMerge(),
+      isDisplayed: () => hasSelection,
+    },
+    {
+      text: `${intl.formatMessage({ id: "actions.add_to_playlist" })}…`,
+      onClick: () => {
+        const selected = selectedItems.map((s) => ({
+          id: s.id,
+          title: objectTitle(s),
+        }));
+        showModal(
+          <AddToPlaylistDialog
+            selected={selected}
+            onClose={(applied) => {
+              closeModal();
+              if (applied) onSelectNone();
+            }}
+          />
+        );
+      },
       isDisplayed: () => hasSelection,
     },
     {

@@ -122,17 +122,20 @@ export function useDefaultFilter(emptyFilter: ListFilterModel, view?: View) {
 function useEmptyFilter(props: {
   filterMode: GQL.FilterMode;
   defaultSort?: string;
+  defaultDisplayMode?: DisplayMode;
   config?: GQL.ConfigDataFragment;
 }) {
-  const { filterMode, defaultSort, config } = props;
+  const { filterMode, defaultSort, defaultDisplayMode, config } = props;
 
-  const emptyFilter = useMemo(
-    () =>
-      new ListFilterModel(filterMode, config, {
-        defaultSortBy: defaultSort,
-      }),
-    [config, filterMode, defaultSort]
-  );
+  const emptyFilter = useMemo(() => {
+    const f = new ListFilterModel(filterMode, config, {
+      defaultSortBy: defaultSort,
+    });
+    if (defaultDisplayMode !== undefined) {
+      f.displayMode = defaultDisplayMode;
+    }
+    return f;
+  }, [config, filterMode, defaultSort, defaultDisplayMode]);
 
   return emptyFilter;
 }
@@ -140,6 +143,7 @@ function useEmptyFilter(props: {
 export interface IFilterStateHook {
   filterMode: GQL.FilterMode;
   defaultSort?: string;
+  defaultDisplayMode?: DisplayMode;
   view?: View;
   useURL?: boolean;
 }
@@ -149,14 +153,25 @@ export function useFilterState(
     config?: GQL.ConfigDataFragment;
   }
 ) {
-  const { filterMode, defaultSort, config, view, useURL } = props;
+  const { filterMode, defaultSort, defaultDisplayMode, config, view, useURL } =
+    props;
 
-  const [filter, setFilterState] = useState<ListFilterModel>(
-    () =>
-      new ListFilterModel(filterMode, config, { defaultSortBy: defaultSort })
-  );
+  const [filter, setFilterState] = useState<ListFilterModel>(() => {
+    const f = new ListFilterModel(filterMode, config, {
+      defaultSortBy: defaultSort,
+    });
+    if (defaultDisplayMode !== undefined) {
+      f.displayMode = defaultDisplayMode;
+    }
+    return f;
+  });
 
-  const emptyFilter = useEmptyFilter({ filterMode, defaultSort, config });
+  const emptyFilter = useEmptyFilter({
+    filterMode,
+    defaultSort,
+    defaultDisplayMode,
+    config,
+  });
 
   const { defaultFilter } = useDefaultFilter(emptyFilter, view);
 

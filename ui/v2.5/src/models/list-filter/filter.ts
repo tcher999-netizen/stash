@@ -70,8 +70,8 @@ export class ListFilterModel {
     this.options = getFilterOptions(mode);
     const { defaultSortBy, displayModeOptions } = this.options;
 
-    if (options?.defaultSortBy) {
-      this.sortBy = options.defaultSortBy;
+    if (options?.defaultSortBy !== undefined) {
+      this.sortBy = options.defaultSortBy || undefined;
       if (options.defaultSortDir) {
         this.sortDirection = options.defaultSortDir;
       }

@@ -93,40 +93,19 @@ func (r *queryResolver) FindScenes(
 		var err error
 
 		fields := graphql.CollectAllFields(ctx)
-		result := &models.SceneQueryResult{}
 
-		if len(sceneIDs) > 0 {
-			scenes, err = r.repository.Scene.FindMany(ctx, sceneIDs)
-			if err == nil {
-				result.Count = len(scenes)
-				for _, s := range scenes {
-					if err = s.LoadPrimaryFile(ctx, r.repository.File); err != nil {
-						break
-					}
-
-					f := s.Files.Primary()
-					if f == nil {
-						continue
-					}
-
-					result.TotalDuration += f.Duration
-
-					result.TotalSize += float64(f.Size)
-				}
-			}
-		} else {
-			result, err = r.repository.Scene.Query(ctx, models.SceneQueryOptions{
-				QueryOptions: models.QueryOptions{
-					FindFilter: filter,
-					Count:      slices.Contains(fields, "count"),
-				},
-				SceneFilter:   sceneFilter,
-				TotalDuration: slices.Contains(fields, "duration"),
-				TotalSize:     slices.Contains(fields, "filesize"),
-			})
-			if err == nil {
-				scenes, err = result.Resolve(ctx)
-			}
+		result, err := r.repository.Scene.Query(ctx, models.SceneQueryOptions{
+			QueryOptions: models.QueryOptions{
+				FindFilter: filter,
+				Count:      slices.Contains(fields, "count"),
+			},
+			SceneFilter:   sceneFilter,
+			SceneIDs:      sceneIDs,
+			TotalDuration: slices.Contains(fields, "duration"),
+			TotalSize:     slices.Contains(fields, "filesize"),
+		})
+		if err == nil {
+			scenes, err = result.Resolve(ctx)
 		}
 
 		if err != nil {

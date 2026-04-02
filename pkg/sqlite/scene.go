@@ -1027,6 +1027,25 @@ func (qb *SceneStore) Query(ctx context.Context, options models.SceneQueryOption
 		return nil, err
 	}
 
+	// Restrict to specific scene IDs if provided
+	if len(options.SceneIDs) > 0 {
+		query.addWhere("scenes.id IN " + getInBinding(len(options.SceneIDs)))
+		for _, id := range options.SceneIDs {
+			query.addArg(id)
+		}
+
+		// When no explicit sort is requested, sort by the input ID order
+		// (preserves playlist position ordering)
+		noSort := options.FindFilter == nil || options.FindFilter.Sort == nil || *options.FindFilter.Sort == ""
+		if noSort {
+			idStr := ","
+			for _, id := range options.SceneIDs {
+				idStr += strconv.Itoa(id) + ","
+			}
+			query.sortAndPagination = "ORDER BY INSTR('" + idStr + "', ',' || CAST(scenes.id AS TEXT) || ',') " + query.sortAndPagination
+		}
+	}
+
 	result, err := qb.queryGroupedFields(ctx, options, *query)
 	if err != nil {
 		return nil, fmt.Errorf("error querying aggregate fields: %w", err)
