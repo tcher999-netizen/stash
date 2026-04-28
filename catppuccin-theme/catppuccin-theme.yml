@@ -1,0 +1,6 @@
+name: Catppuccin Mocha Theme
+description: A pastel dark theme for Stash based on the Catppuccin Mocha palette. Soft, soothing colors with Mauve as the primary accent.
+version: 1.0.0
+ui:
+  css:
+    - catppuccin-theme.css

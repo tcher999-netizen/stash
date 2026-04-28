@@ -1,0 +1,6 @@
+name: Cyberpunk 2077 Theme
+description: A dark theme for Stash inspired by the Cyberpunk 2077 game UI. Features cyber yellow and cyan accents with angular styling and glow effects.
+version: 1.0.0
+ui:
+  css:
+    - cyberpunk-theme.css

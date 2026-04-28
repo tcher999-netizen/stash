@@ -1,0 +1,6 @@
+name: Gruvbox Theme
+description: A warm, retro dark theme for Stash based on the Gruvbox Dark color scheme.
+version: 1.0.0
+ui:
+  css:
+    - gruvbox-theme.css

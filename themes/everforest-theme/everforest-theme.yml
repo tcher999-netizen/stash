@@ -1,0 +1,6 @@
+name: Everforest Theme
+description: A dark theme for Stash based on the Everforest color palette. Soft green accents with warm, muted tones.
+version: 1.0.0
+ui:
+  css:
+    - everforest-theme.css

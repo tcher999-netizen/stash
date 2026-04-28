@@ -1,0 +1,6 @@
+name: Neon Blue Theme
+description: A dark theme for Stash with electric blue neon accents and subtle glow effects.
+version: 1.0.0
+ui:
+  css:
+    - neon-blue-theme.css

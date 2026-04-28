@@ -1,0 +1,6 @@
+name: Monokai Theme
+description: A dark theme for Stash based on the classic Monokai color scheme with vibrant accent colors.
+version: 1.0.0
+ui:
+  css:
+    - monokai-theme.css

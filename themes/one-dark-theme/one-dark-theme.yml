@@ -1,0 +1,6 @@
+name: One Dark Theme
+description: A dark theme for Stash based on the popular One Dark (Atom) color scheme.
+version: 1.0.0
+ui:
+  css:
+    - one-dark-theme.css

@@ -1,0 +1,6 @@
+name: Nord Theme
+description: A dark theme for Stash based on the Nord color palette with blue-gray tones.
+version: 1.0.0
+ui:
+  css:
+    - nord-theme.css

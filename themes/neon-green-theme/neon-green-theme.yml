@@ -1,0 +1,6 @@
+name: Neon Green Theme
+description: A dark theme for Stash with electric neon green accents and subtle glow effects.
+version: 1.0.0
+ui:
+  css:
+    - neon-green-theme.css

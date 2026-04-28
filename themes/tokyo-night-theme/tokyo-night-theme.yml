@@ -1,0 +1,6 @@
+name: Tokyo Night Theme
+description: A dark theme for Stash inspired by the popular Tokyo Night color scheme.
+version: 1.0.0
+ui:
+  css:
+    - tokyo-night-theme.css

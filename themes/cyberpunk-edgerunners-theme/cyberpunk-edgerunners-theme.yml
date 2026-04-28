@@ -1,0 +1,6 @@
+name: Cyberpunk Edgerunners Theme
+description: An aggressive, neon-drenched dark theme inspired by Cyberpunk Edgerunners. Features warm red/orange accents with violet highlights and glow effects.
+version: 1.0.0
+ui:
+  css:
+    - cyberpunk-edgerunners-theme.css

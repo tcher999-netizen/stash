@@ -1,0 +1,6 @@
+name: Ayu Light Theme
+description: A light theme for Stash based on the Ayu Light color scheme. Clean, warm, and easy on the eyes.
+version: 1.0.0
+ui:
+  css:
+    - ayu-light-theme.css

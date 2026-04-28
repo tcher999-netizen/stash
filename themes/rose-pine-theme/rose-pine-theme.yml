@@ -1,0 +1,6 @@
+name: Rose Pine Theme
+description: A dark theme for Stash based on the Rose Pine color palette.
+version: 1.0.0
+ui:
+  css:
+    - rose-pine-theme.css

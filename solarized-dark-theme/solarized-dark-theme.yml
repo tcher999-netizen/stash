@@ -1,0 +1,6 @@
+name: Solarized Dark Theme
+description: A dark theme for Stash based on the classic Solarized color scheme by Ethan Schoonover.
+version: 1.0.0
+ui:
+  css:
+    - solarized-dark-theme.css
